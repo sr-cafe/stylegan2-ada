@@ -13,18 +13,16 @@ class StyleGanWrapper:
 		rnd = np.random.RandomState(seed)
 		return (rnd.randn(1, z_space_dims), rnd)
 
-	def __init__(self, network_path, truncation_psi=0.5):
-		self.network_path = network_path
+	def __init__(self, network_loader, truncation_psi=0.5):
+		self.network_loader = network_loader
 		self.truncation_psi = truncation_psi
-		tflib.init_tf()
 
-	def load_network(self, network_path=None):
-		if network_path is not None:
-			self.network_path = network_path
+	def load_network(self, network_path):
+		self.network_path = network_path
 
 		tflib.init_tf()
 
-		self._G, self._D, self.Gs = NetworkLoader.load(self.network_path)
+		self._G, self._D, self.Gs = self.network_loader.load(self.network_path)
 
 		print(self.output_shape())
 

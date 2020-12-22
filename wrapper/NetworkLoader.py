@@ -1,9 +1,11 @@
+import os
 import gdown
 import pickle
 
 class NetworkLoader:
 	def __init__(self, output_dir):
 		self.output_dir = output_dir
+		os.makedirs(self.output_dir, exist_ok=True)
 
 	# TODO: Make this compatible with other sources than GDrive.
 	# TODO: Make saved_network_name optional
