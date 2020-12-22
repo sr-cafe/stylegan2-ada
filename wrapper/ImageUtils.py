@@ -7,7 +7,7 @@ class ImageUtils:
 	img_size=512
 
 	@staticmethod
-	def to_grid(images, thumb_size=ImageUtils.img_size, columns=None):
+	def to_grid(images, thumb_size=img_size, columns=None):
 		if columns is None:
 			columns = math.floor(math.sqrt(len(images)))
 
@@ -29,7 +29,7 @@ class ImageUtils:
 		return image
 
 	@staticmethod
-	def to_video(images, output_path, size=ImageUtils.img_size, fps=24):
+	def to_video(images, output_path, size=img_size, fps=24):
 		clips = []
 
 		video = moviepy.editor.ImageSequenceClip(images, fps=fps)
