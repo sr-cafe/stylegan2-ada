@@ -22,7 +22,7 @@ class NetworkLoader:
 
 		pickle_file = gdown.download(url, output, False)
 		print('pickle_file', pickle_file)
-		with open(pickle_file) as pf:
+		with open(pickle_file, 'rb') as pf:
 			_G, _D, Gs = pickle.load(pf)
 
 		return _G, _D, Gs
