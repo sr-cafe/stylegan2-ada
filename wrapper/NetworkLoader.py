@@ -18,10 +18,10 @@ class NetworkLoader:
 		else:
 			dir = self.output_dir
 
-		output = f'{dir}/{saved_network_name}'
+		output = f'{dir}/{saved_network_name}.pkl'
 
 		pickle_file = gdown.download(url, output, False)
-
+		print('pickle_file', pickle_file)
 		with open(pickle_file) as pf:
 			_G, _D, Gs = pickle.load(pf)
 
