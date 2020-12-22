@@ -17,12 +17,10 @@ class StyleGanWrapper:
 		self.network_loader = network_loader
 		self.truncation_psi = truncation_psi
 
-	def load_network(self, network_path):
-		self.network_path = network_path
-
+	def load_network(self, network_path, saved_network_name):
 		tflib.init_tf()
 
-		self._G, self._D, self.Gs = self.network_loader.load(self.network_path)
+		self._G, self._D, self.Gs = self.network_loader.load(network_path, saved_network_name)
 
 		print(self.output_shape())
 
