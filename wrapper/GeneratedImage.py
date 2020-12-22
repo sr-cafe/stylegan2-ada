@@ -1,7 +1,20 @@
 from PIL import Image
 from .Latent import Latent
+from .ImageUtils import ImageUtils
 
 class GeneratedImage:
+	@staticmethod
+	def to_image_list(images, size=None):
+		return list(map(lambda image: image.as_image(size), images))
+
+	@staticmethod
+	def to_grid(images, thumb_size=ImageUtils.img_size, columns=None):
+		return ImageUtils.to_grid(
+			GeneratedImage.to_image_list(images),
+			thumb_size,
+			columns
+		)
+
 	def __init__(self, image, latent):
 		self.image = image
 		if isinstance(latent, Latent):

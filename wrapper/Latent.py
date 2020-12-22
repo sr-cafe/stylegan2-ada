@@ -1,6 +1,7 @@
 import numpy as np
 
 class Latent:
+	# TODO: Send network shape and check compatibility
 	@staticmethod
 	def from_file(filepath):
 		vector = np.load(filepath)['dlatents']

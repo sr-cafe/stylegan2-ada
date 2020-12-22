@@ -5,6 +5,7 @@ import pickle
 
 from .GeneratedImage import GeneratedImage
 from .Latent import Latent
+from .NetworkLoader import NetworkLoader
 
 class StyleGanWrapper:
 	@staticmethod
@@ -22,8 +23,10 @@ class StyleGanWrapper:
 			self.network_path = network_path
 
 		tflib.init_tf()
-		with dnnlib.util.open_url(self.network_path) as nf:
-			self._G, self._D, self.Gs = pickle.load(nf)
+
+		self._G, self._D, self.Gs = NetworkLoader.load(self.network_path)
+
+		print(self.output_shape())
 
 		self.noise_vars = [var for name, var in self.Gs.components.synthesis.vars.items() if name.startswith('noise')]
 		self.Gs_kwargs = {
@@ -55,7 +58,13 @@ class StyleGanWrapper:
 		tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
 		return self.__generate(z, label)
 
-	def from_latent(self, latents_filepath):
-		latent = Latent.from_file(latents_filepath)
+	def from_latent(self, latent):
+		if isinstance(latent, str):
+			latent = Latent.from_file(latent, self.output_shape())
+		elif not isinstance(latent, Latent):
+			latent = Latent(latent)
 		imgs = self.Gs.components.synthesis.run(latent.vector, output_transform=dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True))
 		return imgs
+
+	def output_shape(self):
+		return self.Gs.output_shape
