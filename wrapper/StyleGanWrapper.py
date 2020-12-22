@@ -55,10 +55,13 @@ class StyleGanWrapper:
 		return self.__generate(z, label)
 
 	def from_latent(self, latent):
+		print('latent', latent)
 		if isinstance(latent, str):
 			latent = Latent.from_file(latent, self.output_shape())
 		elif not isinstance(latent, Latent):
 			latent = Latent(latent)
+		print('LATENT', latent)
+		print(latent.vector.shape)
 		imgs = self.Gs.components.synthesis.run(latent.vector, output_transform=dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True))
 		return imgs
 
