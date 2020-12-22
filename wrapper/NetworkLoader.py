@@ -20,7 +20,7 @@ class NetworkLoader:
 
 		output = f'{dir}/{saved_network_name}'
 
-		pickle_file = gdown.download(url, output)
+		pickle_file = gdown.download(url, output, False)
 
 		with open(pickle_file) as pf:
 			_G, _D, Gs = pickle.load(pf)
