@@ -33,12 +33,20 @@ class StyleGanWrapper:
 		return self
 
 	def __generate(self, z, label=None):
-		image = self.Gs.run(z, label, **self.Gs_kwargs) # [minibatch, height, width, channel]
-		return GeneratedImage(image, Latent(z))
+		images = self.Gs.run(z, label, **self.Gs_kwargs) # [minibatch, height, width, channel]
+		if isinstance(images, list):
+			return list(map(lambda image, i: GeneratedImage(image, z[i])))
+		else:
+			return GeneratedImage(images, Latent(z))
 
-	def from_seed(self, seed, truncation_psi=None, class_idx=None):
-		z, rnd = StyleGanWrapper.expand_seed(seed, *self.Gs.input_shape[1:]) # [minibatch, component]
+	def _get_label(self, class_idx):
+		label = np.zeros([1] + self.Gs.input_shapes[1][1:])
+		if class_idx is not None:
+			label[:, class_idx] = 1
 
+		return label
+
+	def _set_truncation_psi(self, truncation_psi):
 		if truncation_psi is not None:
 			truncation = truncation_psi
 		else:
@@ -47,21 +55,20 @@ class StyleGanWrapper:
 		if truncation is not None:
 			self.Gs_kwargs['truncation_psi'] = truncation
 
-		label = np.zeros([1] + self.Gs.input_shapes[1][1:])
-		if class_idx is not None:
-			label[:, class_idx] = 1
+	def from_seed(self, seed, truncation_psi=None, class_idx=None):
+		z, rnd = StyleGanWrapper.expand_seed(seed, *self.Gs.input_shape[1:]) # [minibatch, component]
+
+		self._set_truncation_psi(truncation_psi)
 
 		tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
-		return self.__generate(z, label)
+		return self.__generate(z, self._get_label(class_idx))
 
-	def from_latent(self, latent):
-		print('latent', latent)
+	def from_latent(self, latent, truncation_psi=None):
 		if isinstance(latent, str):
 			latent = Latent.from_file(latent, self.output_shape())
 		elif not isinstance(latent, Latent):
 			latent = Latent(latent)
-		print('LATENT', latent)
-		print(latent.vector.shape)
+
 		imgs = self.Gs.components.synthesis.run(latent.vector, output_transform=dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True))
 		return imgs
 
