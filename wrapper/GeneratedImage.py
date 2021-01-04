@@ -17,6 +17,17 @@ class GeneratedImage:
 		)
 
 	@staticmethod
+	def to_video(images, filepath, size=ImageUtils.img_size, fps=24):
+		frames = list(map(lambda image: image.image[0], images))
+
+		return ImageUtils.to_video(
+			frames,
+			filepath,
+			size,
+			fps
+		)
+
+	@staticmethod
 	def from_file(filepath):
 		with open(filepath, 'rb') as f:
 			store = pickle.load(f)
