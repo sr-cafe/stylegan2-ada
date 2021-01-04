@@ -13,7 +13,7 @@ class NetworkLoader:
 	# TODO: Make saved_network_name optional
 	# Currently "network_path" is expected to be a GDrive file id.
 	def load(self, network_path, saved_network_name, output_dir=None):
-		if self.cache[network_path]:
+		if network_path in self.cache:
 			pickle_file = self.cache[network_path]
 		else:
 			url = f'https://drive.google.com/uc?id={network_path}'
@@ -25,7 +25,10 @@ class NetworkLoader:
 
 			output = f'{dir}/{saved_network_name}.pkl'
 
-			pickle_file = gdown.download(url, output, False)
+			if os.path.isfile(output):
+				pickle_file = output
+			else:
+				pickle_file = gdown.download(url, output, False)
 
 			self.cache[network_path] = output
 

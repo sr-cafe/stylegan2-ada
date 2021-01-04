@@ -23,9 +23,9 @@ class GeneratedImage:
 
 		return GeneratedImage(store.image, store.z_vector, store.truncation_psi)
 
-	def __init__(self, image, vector, truncation_psi):
+	def __init__(self, image, latent):
 		self.image = image
-		self.latent = Latent(vector, truncation_psi)
+		self.latent = latent
 
 	def as_image(self, size=None):
 		image = Image.fromarray(self.image[0])

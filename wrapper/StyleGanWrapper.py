@@ -4,6 +4,7 @@ import dnnlib.tflib as tflib
 import pickle
 
 from .GeneratedImage import GeneratedImage
+from .Latent import Latent
 from .NetworkLoader import NetworkLoader
 
 class StyleGanWrapper:
@@ -29,13 +30,30 @@ class StyleGanWrapper:
 
 		return self
 
-	def __generate_from_z(self, z_vector, label=None):
-		image = self.Gs.run(z_vector, label, **self.Gs_kwargs)
-		return GeneratedImage(image, z_vector, self.Gs_kwargs['truncation_psi'])
+	# def __generate_from_z(self, z_vector, label=None):
+	# 	image = self.Gs.run(z_vector, label, **self.Gs_kwargs)
+	# 	return GeneratedImage(image, z_vector, self.Gs_kwargs['truncation_psi'])
 
-	def __generate_from_w(self, w_vector, label=None):
-		image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs)
-		return GeneratedImage(image, w_vector, self.Gs_kwargs['truncation_psi'])
+	# def __generate_from_w(self, w_vector, label=None):
+	# 	image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs)
+	# 	return GeneratedImage(image, w_vector, self.Gs_kwargs['truncation_psi'])
+
+	def __generate(self, latent, label=None):
+
+		if latent.truncation_psi is not None:
+			truncation = latent.truncation_psi
+		else:
+			truncation = self.truncation_psi
+
+		if truncation is not None:
+			self.Gs_kwargs['truncation_psi'] = truncation
+
+		if latent.type is 'z':
+			image = self.Gs.run(latent.vector, label, **self.Gs_kwargs)
+		else:
+			image = self.Gs.components.synthesis.run(latent.vector, **self.Gs_kwargs)
+
+		return GeneratedImage(image, latent)
 
 	def _get_label(self, class_idx):
 		label = np.zeros([1] + self.Gs.input_shapes[1][1:])
@@ -44,22 +62,25 @@ class StyleGanWrapper:
 
 		return label
 
-	def _set_truncation_psi(self, truncation_psi):
-		if truncation_psi is not None:
-			truncation = truncation_psi
-		else:
-			truncation = self.truncation_psi
+	# def _set_truncation_psi(self, truncation_psi):
+	# 	if truncation_psi is not None:
+	# 		truncation = truncation_psi
+	# 	else:
+	# 		truncation = self.truncation_psi
 
-		if truncation is not None:
-			self.Gs_kwargs['truncation_psi'] = truncation
+	# 	if truncation is not None:
+	# 		self.Gs_kwargs['truncation_psi'] = truncation
 
 	def from_seed(self, seed, truncation_psi=None, class_idx=None):
 		z, rnd = StyleGanWrapper.expand_seed(seed, *self.Gs.input_shape[1:]) # [minibatch, component]
 
-		self._set_truncation_psi(truncation_psi)
+		# self._set_truncation_psi(truncation_psi)
+
+		latent = Latent(z, truncation_psi, 'z')
 
 		tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
-		return self.__generate_from_z(z, self._get_label(class_idx))
+		return self.__generate(latent, self._get_label(class_idx))
+		# return self.__generate_from_z(z, self._get_label(class_idx))
 
 	def from_seeds(self, seeds, truncation_psi=None, class_idx=None):
 		if not isinstance(seeds, list):
@@ -75,9 +96,11 @@ class StyleGanWrapper:
 	def from_z_vector(self, z_vector, truncation_psi=None, class_idx=None):
 		noise_rnd = np.random.RandomState(1) # fix noise
 
+		latent = Latent(z_vector, truncation_psi, 'z')
+
 		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
 
-		return self.__generate_from_z(z_vector, self._get_label(class_idx))
+		return self.__generate(latent, self._get_label(class_idx))
 
 	def from_z_vectors(self, z_vectors, truncation_psi=None, class_idx=None):
 		if not isinstance(z_vectors, list):
@@ -91,11 +114,17 @@ class StyleGanWrapper:
 		return images
 
 	def from_w_vector(self, w_vector, truncation_psi=None):
-		self._set_truncation_psi(truncation_psi)
+		latent = Latent(w_vector, truncation_psi, 'w')
 		noise_rnd = np.random.RandomState(1) # fix noise
 		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars})
 
-		return self.__generate_from_w(w_vector, truncation_psi)
+		return self.__generate(latent)
+
+	def from_latent(self, latent):
+		noise_rnd = np.random.RandomState(1) # fix noise
+		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars})
+
+		return self.__generate(latent)
 
 	def explore_neighbours(self, z_vector, radius, num_samples, truncation_psi=None):
 		if isinstance(z_vector, GeneratedImage):
