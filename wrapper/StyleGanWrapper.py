@@ -30,12 +30,12 @@ class StyleGanWrapper:
 		return self
 
 	def __generate_from_z(self, z_vector, label=None):
-		image = self.Gs.run(z_vector, label, **self.Gs_kwargs) # [minibatch, height, width, channel]
-		return GeneratedImage(image, z_vector)
+		image = self.Gs.run(z_vector, label, **self.Gs_kwargs)
+		return GeneratedImage(image, z_vector, self.Gs_kwargs['truncation_psi'])
 
 	def __generate_from_w(self, w_vector, label=None):
-		image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs) # [minibatch, height, width, channel]
-		return GeneratedImage(image, w_vector)
+		image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs)
+		return GeneratedImage(image, w_vector, self.Gs_kwargs['truncation_psi'])
 
 	def _get_label(self, class_idx):
 		label = np.zeros([1] + self.Gs.input_shapes[1][1:])
