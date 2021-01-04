@@ -126,18 +126,5 @@ class StyleGanWrapper:
 
 		return self.__generate(latent)
 
-	def explore_neighbours(self, z_vector, radius, num_samples, truncation_psi=None):
-		if isinstance(z_vector, GeneratedImage):
-			z_vector = z_vector.z_vector
-
-		images = [self.from_z_vector(z_vector, truncation_psi)]
-
-		for indx in range(num_samples):
-			random = np.random.uniform(-radius,radius,[1,512])
-			z = np.clip(np.add(z_vector, random), -1, 1)
-			images.append(self.from_z_vector(z, truncation_psi))
-
-		return images
-
 	def output_shape(self):
 		return self.Gs.output_shape
