@@ -7,7 +7,7 @@ class RandomNeighbours(BaseExploration):
 	def __init__(self, styleGanWrapper):
 		BaseExploration.__init__(self, styleGanWrapper)
 
-	def explore(self, latent, radius, num_samples):
+	def run(self, latent, radius, num_samples):
 		images = [self.styleGanWrapper.from_latent(latent)]
 
 		for indx in range(num_samples):

@@ -30,14 +30,6 @@ class StyleGanWrapper:
 
 		return self
 
-	# def __generate_from_z(self, z_vector, label=None):
-	# 	image = self.Gs.run(z_vector, label, **self.Gs_kwargs)
-	# 	return GeneratedImage(image, z_vector, self.Gs_kwargs['truncation_psi'])
-
-	# def __generate_from_w(self, w_vector, label=None):
-	# 	image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs)
-	# 	return GeneratedImage(image, w_vector, self.Gs_kwargs['truncation_psi'])
-
 	def __generate(self, latent, label=None):
 
 		if latent.truncation_psi is not None:
@@ -74,9 +66,7 @@ class StyleGanWrapper:
 	def from_seed(self, seed, truncation_psi=None, class_idx=None):
 		z, rnd = StyleGanWrapper.expand_seed(seed, *self.Gs.input_shape[1:]) # [minibatch, component]
 
-		# self._set_truncation_psi(truncation_psi)
-
-		latent = Latent(z, truncation_psi, 'z')
+		latent = Latent(z, truncation_psi, seed, 'z')
 
 		tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
 		return self.__generate(latent, self._get_label(class_idx))
@@ -121,10 +111,7 @@ class StyleGanWrapper:
 		return self.__generate(latent)
 
 	def from_latent(self, latent):
-		noise_rnd = np.random.RandomState(1) # fix noise
-		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars})
-
-		return self.__generate(latent)
+		return self.from_seed(latent.seed, latent.truncation_psi)
 
 	def output_shape(self):
 		return self.Gs.output_shape

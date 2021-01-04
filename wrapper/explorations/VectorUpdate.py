@@ -3,11 +3,10 @@ from ..Latent import Latent
 from .BaseExploration import BaseExploration
 
 class VectorUpdate(BaseExploration):
-
 	def __init__(self, styleGanWrapper):
 		BaseExploration.__init__(self, styleGanWrapper)
 
-	def explore(self, latent, transformFunction, cumulative=True):
+	def run(self, latent, transformFunction, cumulative=True):
 		images = [self.styleGanWrapper.from_latent(latent)]
 		currentLatent = latent
 		dimensions = 512
