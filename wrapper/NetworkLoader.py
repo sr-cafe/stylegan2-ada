@@ -27,6 +27,8 @@ class NetworkLoader:
 
 			pickle_file = gdown.download(url, output, False)
 
+			self.cache[network_path] = output
+
 		with open(pickle_file, 'rb') as pf:
 			_G, _D, Gs = pickle.load(pf)
 
