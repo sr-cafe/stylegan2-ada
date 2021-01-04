@@ -4,7 +4,6 @@ import dnnlib.tflib as tflib
 import pickle
 
 from .GeneratedImage import GeneratedImage
-from .Latent import Latent
 from .NetworkLoader import NetworkLoader
 
 class StyleGanWrapper:
@@ -22,8 +21,6 @@ class StyleGanWrapper:
 
 		self._G, self._D, self.Gs = self.network_loader.load(network_path, saved_network_name)
 
-		print(self.output_shape())
-
 		self.noise_vars = [var for name, var in self.Gs.components.synthesis.vars.items() if name.startswith('noise')]
 		self.Gs_kwargs = {
 			'output_transform': dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True),
@@ -32,12 +29,13 @@ class StyleGanWrapper:
 
 		return self
 
-	def __generate(self, z, label=None):
-		images = self.Gs.run(z, label, **self.Gs_kwargs) # [minibatch, height, width, channel]
-		if isinstance(images, list):
-			return list(map(lambda image, i: GeneratedImage(image, z[i])))
-		else:
-			return GeneratedImage(images, Latent(z))
+	def __generate_from_z(self, z_vector, label=None):
+		image = self.Gs.run(z_vector, label, **self.Gs_kwargs) # [minibatch, height, width, channel]
+		return GeneratedImage(image, z_vector)
+
+	def __generate_from_w(self, w_vector, label=None):
+		image = self.Gs.components.synthesis.run(w_vector, **self.Gs_kwargs) # [minibatch, height, width, channel]
+		return GeneratedImage(image, w_vector)
 
 	def _get_label(self, class_idx):
 		label = np.zeros([1] + self.Gs.input_shapes[1][1:])
@@ -61,16 +59,56 @@ class StyleGanWrapper:
 		self._set_truncation_psi(truncation_psi)
 
 		tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
-		return self.__generate(z, self._get_label(class_idx))
+		return self.__generate_from_z(z, self._get_label(class_idx))
 
-	def from_latent(self, latent, truncation_psi=None):
-		if isinstance(latent, str):
-			latent = Latent.from_file(latent, self.output_shape())
-		elif not isinstance(latent, Latent):
-			latent = Latent(latent)
+	def from_seeds(self, seeds, truncation_psi=None, class_idx=None):
+		if not isinstance(seeds, list):
+			seeds = [seeds]
 
-		imgs = self.Gs.components.synthesis.run(latent.vector, output_transform=dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True))
-		return imgs
+		images = []
+
+		for indx, seed in enumerate(seeds):
+			images.append(self.from_seed(seed, truncation_psi, class_idx))
+
+		return images
+
+	def from_z_vector(self, z_vector, truncation_psi=None, class_idx=None):
+		noise_rnd = np.random.RandomState(1) # fix noise
+
+		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars}) # [height, width]
+
+		return self.__generate_from_z(z_vector, self._get_label(class_idx))
+
+	def from_z_vectors(self, z_vectors, truncation_psi=None, class_idx=None):
+		if not isinstance(z_vectors, list):
+			z_vectors = [z_vectors]
+
+		images = []
+
+		for indx, z_vector in enumerate(z_vectors):
+			images.append(self.from_z_vector(z_vector, truncation_psi, class_idx))
+
+		return images
+
+	def from_w_vector(self, w_vector, truncation_psi=None):
+		self._set_truncation_psi(truncation_psi)
+		noise_rnd = np.random.RandomState(1) # fix noise
+		tflib.set_vars({var: noise_rnd.randn(*var.shape.as_list()) for var in self.noise_vars})
+
+		return self.__generate_from_w(w_vector, truncation_psi)
+
+	def explore_neighbours(self, z_vector, radius, num_samples, truncation_psi=None):
+		if isinstance(z_vector, GeneratedImage):
+			z_vector = z_vector.z_vector
+
+		images = [self.from_z_vector(z_vector, truncation_psi)]
+
+		for indx in range(num_samples):
+			random = np.random.uniform(-radius,radius,[1,512])
+			z = np.clip(np.add(z_vector, random), -1, 1)
+			images.append(self.from_z_vector(z, truncation_psi))
+
+		return images
 
 	def output_shape(self):
 		return self.Gs.output_shape

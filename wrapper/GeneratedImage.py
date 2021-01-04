@@ -1,3 +1,4 @@
+import pickle
 from PIL import Image
 from .Latent import Latent
 from .ImageUtils import ImageUtils
@@ -15,12 +16,16 @@ class GeneratedImage:
 			columns
 		)
 
-	def __init__(self, image, latent):
+	@staticmethod
+	def from_file(filepath):
+		with open(filepath, 'rb') as f:
+			store = pickle.load(f)
+
+		return GeneratedImage(store.image, store.z_vector, store.truncation_psi)
+
+	def __init__(self, image, vector, truncation_psi):
 		self.image = image
-		if isinstance(latent, Latent):
-			self.latent = latent
-		else:
-			self.latent = Latent(latent)
+		self.latent = Latent(vector, truncation_psi)
 
 	def as_image(self, size=None):
 		image = Image.fromarray(self.image[0])
@@ -30,5 +35,6 @@ class GeneratedImage:
 
 		return image
 
-	def as_z_vector(self):
-		return self.latent.vector
+	def save(self, filepath):
+		with open(filepath, 'wb') as f:
+			pickle.dump(self, f)
