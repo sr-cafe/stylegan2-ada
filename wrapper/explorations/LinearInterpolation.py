@@ -17,6 +17,8 @@ class LinearInterpolation(BaseExploration):
 		for i in range(len(latents) - 1):
 			for j in range(steps):
 				fraction = j / float(steps)
-				vector = latents(i + 1) * fraction + latents[i] * (1 - fraction)
-				currentLatent = Latent(vector, truncation, latentType)
+				vector = latents[i + 1].vector * fraction + latents[i].vector * (1 - fraction)
+				currentLatent = Latent(vector, truncation, None, latentType)
 				images.append(self.styleGanWrapper.from_latent(currentLatent))
+
+		return images

@@ -9,6 +9,11 @@ class Latent:
 			latent = pickle.load(pf)
 		return latent
 
+	@staticmethod
+	def from_seed(seed, truncation_psi=0.5, z_space_dims=512):
+		rnd = np.random.RandomState(seed)
+		return Latent(rnd.randn(1, z_space_dims), truncation_psi, seed, 'z')
+
 	def __init__(self, vector, truncation_psi, seed = 1, type = 'z'):
 		self.vector = vector
 		self.truncation_psi = truncation_psi
