@@ -1,24 +1,21 @@
 import numpy as np
 from ..Latent import Latent
 from .BaseExploration import BaseExploration
+from .Easings import *
 
 class LinearInterpolation(BaseExploration):
 	def __init__(self, styleGanWrapper):
 		BaseExploration.__init__(self, styleGanWrapper)
 
-	def run(self, latents, steps, shuffle=False):
-		if shuffle:
-			np.random.shuffle(latents)
-
+	def run(self, start, end, steps, easing=LinearInOut):
+		step_inc = 1.0 / steps
+		steps_num = np.arange(0, 1, step_inc)
 		images = []
-		truncation = latents[0].truncation_psi
-		latentType = latents[0].type
+		truncation = start.truncation_psi
+		interpolator = easing(start, end, 1)
 
-		for i in range(len(latents) - 1):
-			for j in range(steps):
-				fraction = j / float(steps)
-				vector = latents[i + 1].vector * fraction + latents[i].vector * (1 - fraction)
-				currentLatent = Latent(vector, truncation, None, latentType)
-				images.append(self.styleGanWrapper.from_latent(currentLatent))
+		for alpha in steps_num:
+			currentLatent = Latent(interpolator.ease(alpha), truncation)
+			images.append(self.from_latent(currentLatent))
 
 		return images
