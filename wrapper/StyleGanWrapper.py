@@ -13,7 +13,7 @@ class StyleGanWrapper:
 		rnd = np.random.RandomState(seed)
 		return (rnd.randn(1, z_space_dims), rnd)
 
-	def __init__(self, network_loader, truncation_psi=0.5):
+	def __init__(self, network_loader=None, truncation_psi=0.5):
 		self.network_loader = network_loader
 		self.truncation_psi = truncation_psi
 
@@ -28,6 +28,20 @@ class StyleGanWrapper:
 			'randomize_noise': False
 		}
 
+		return self
+
+	def set_network(self, network):
+		self._G, self._D, self.Gs = network
+		return self
+
+	def save_network(self, filepath):
+		with open(filepath, 'wb') as f:
+			pickle.dump((self._G, self._D, self._Gs), f)
+		return self
+
+	def save(self, filepath):
+		with open(filepath, 'wb') as f:
+			pickle.dump(self, f)
 		return self
 
 	def __generate(self, latent, label=None):
@@ -53,15 +67,6 @@ class StyleGanWrapper:
 			label[:, class_idx] = 1
 
 		return label
-
-	# def _set_truncation_psi(self, truncation_psi):
-	# 	if truncation_psi is not None:
-	# 		truncation = truncation_psi
-	# 	else:
-	# 		truncation = self.truncation_psi
-
-	# 	if truncation is not None:
-	# 		self.Gs_kwargs['truncation_psi'] = truncation
 
 	def from_seed(self, seed, truncation_psi=None, class_idx=None):
 		z, rnd = StyleGanWrapper.expand_seed(seed, *self.Gs.input_shape[1:]) # [minibatch, component]
