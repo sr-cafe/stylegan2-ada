@@ -36,11 +36,9 @@ class ModelBlender:
 		return conv_names
 
 	@staticmethod
-	def blend_models(low_res_model, high_res_model, resolution, level, blend=0):
-		if isinstance(low_res_model, StyleGanWrapper):
-			low_res_model = low_res_model.Gs
-		if isinstance(high_res_model, StyleGanWrapper):
-			high_res_model = high_res_model.Gs
+	def blend_models(low_res_wrapper, high_res_wrapper, resolution, level, blend=0):
+		low_res_model = low_res_wrapper.Gs
+		high_res_model = high_res_wrapper.Gs
 
 		result_model = low_res_model.clone()
 
@@ -70,4 +68,4 @@ class ModelBlender:
 			)
 		)
 
-		return StyleGanWrapper().set_network(result_model)
+		return StyleGanWrapper().set_network((low_res_wrapper._G, low_res_wrapper._D, result_model))

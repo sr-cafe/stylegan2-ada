@@ -21,17 +21,12 @@ class StyleGanWrapper:
 		tflib.init_tf()
 
 		self._G, self._D, self.Gs = self.network_loader.load(network_path, saved_network_name)
-
-		self.noise_vars = [var for name, var in self.Gs.components.synthesis.vars.items() if name.startswith('noise')]
-		self.Gs_kwargs = {
-			'output_transform': dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True),
-			'randomize_noise': False
-		}
-
+		self.__set_vars()
 		return self
 
 	def set_network(self, network):
 		self._G, self._D, self.Gs = network
+		self.__set_vars()
 		return self
 
 	def save_network(self, filepath):
@@ -43,6 +38,13 @@ class StyleGanWrapper:
 		with open(filepath, 'wb') as f:
 			pickle.dump(self, f)
 		return self
+
+	def __set_vars(self):
+		self.noise_vars = [var for name, var in self.Gs.components.synthesis.vars.items() if name.startswith('noise')]
+		self.Gs_kwargs = {
+			'output_transform': dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True),
+			'randomize_noise': False
+		}
 
 	def __generate(self, latent, label=None):
 
